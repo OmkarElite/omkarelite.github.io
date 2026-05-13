@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neuroscience Explorer</title>
+<style>
+  /* ========== RESET & BASE ========== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0d1a;
+    --surface: #161630;
+    --surface2: #1e1e3a;
+    --purple: #a855f7;
+    --blue: #60a5fa;
+    --pink: #e879a0;
+    --green: #4ade80;
+    --yellow: #facc15;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --radius: 14px;
+    --transition: 0.25s ease;
+  }
+
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    min-height: 100vh;
+    padding: 0 0 2rem;
+  }
+
+  /* ========== PROGRESS BAR ========== */
+  .progress-wrap {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--bg);
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid #ffffff10;
+    backdrop-filter: blur(8px);
+  }
+  .progress-label {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.35rem;
+  }
+  .progress-track {
+    height: 6px; background: #ffffff15; border-radius: 3px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; background: linear-gradient(90deg, var(--purple), var(--blue));
+    border-radius: 3px; transition: width 0.5s ease; width: 0%;
+  }
+
+  /* ========== HEADER ========== */
+  header {
+    text-align: center; padding: 2rem 1rem 1.5rem;
+  }
+  header h1 {
+    font-size: 1.8rem; font-weight: 800;
+    background: linear-gradient(135deg, var(--purple), var(--pink));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.3rem;
+  }
+  header .subtitle {
+    font-size: 0.9rem; color: var(--text-dim);
+  }
+  .brain-icon { font-size: 3rem; display: block; margin-bottom: 0.5rem; }
+
+  /* ========== TAB NAVIGATION ========== */
+  .tab-nav {
+    display: flex; gap: 0.4rem; padding: 0 1rem;
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tab-nav::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    flex-shrink: 0; padding: 0.55rem 1rem;
+    border: 1px solid #ffffff20; border-radius: 2rem;
+    background: transparent; color: var(--text-dim);
+    font-size: 0.85rem; cursor: pointer;
+    transition: var(--transition); white-space: nowrap;
+    font-family: inherit;
+  }
+  .tab-btn.active {
+    background: var(--purple); border-color: var(--purple); color: #fff; font-weight: 600;
+  }
+  .tab-btn.completed {
+    border-color: var(--green); color: var(--green);
+  }
+  .tab-btn.completed::after { content: " ✓"; font-size: 0.7rem; }
+
+  /* ========== CONTENT AREA ========== */
+  .tab-content { display: none; padding: 1.25rem 1rem; }
+  .tab-content.active { display: block; animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ========== CARDS ========== */
+  .card {
+    background: var(--surface); border-radius: var(--radius);
+    padding: 1.25rem; margin-bottom: 1rem;
+    border: 1px solid #ffffff0a;
+    transition: var(--transition);
+  }
+  .card:hover { border-color: #ffffff20; }
+  .card h2 {
+    font-size: 1.15rem; margin-bottom: 0.6rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .card h3 { font-size: 1rem; margin: 0.8rem 0 0.4rem; color: var(--blue); }
+
+  /* ========== FUN FACT BOX ========== */
+  .fun-fact {
+    background: linear-gradient(135deg, #2d1b4e, #1e1e3a);
+    border-left: 4px solid var(--yellow);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 1rem 1.25rem; margin: 1rem 0;
+    font-size: 0.9rem;
+  }
+  .fun-fact strong { color: var(--yellow); }
+
+  /* ========== EXPANDABLE SECTION ========== */
+  .expandable {
+    background: var(--surface2); border-radius: var(--radius);
+    margin-bottom: 0.75rem; overflow: hidden;
+  }
+  .expandable summary {
+    padding: 1rem 1.25rem; cursor: pointer; font-weight: 600;
+    font-size: 0.95rem; list-style: none;
+    display: flex; justify-content: space-between; align-items: center;
+    user-select: none;
+  }
+  .expandable summary::-webkit-details-marker { display: none; }
+  .expandable summary .arrow {
+    transition: transform 0.3s ease; font-size: 0.75rem; color: var(--purple);
+  }
+  .expandable[open] summary .arrow { transform: rotate(180deg); }
+  .expandable .inner {
+    padding: 0 1.25rem 1.25rem; font-size: 0.9rem; color: var(--text-dim);
+  }
+
+  /* ========== TABLE ========== */
+  .simple-table {
+    width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 0.75rem 0;
+  }
+  .simple-table th, .simple-table td {
+    text-align: left; padding: 0.6rem 0.5rem; border-bottom: 1px solid #ffffff10;
+  }
+  .simple-table th { color: var(--purple); font-weight: 600; }
+
+  /* ========== QUIZ ========== */
+  .quiz-block { margin-top: 2rem; }
+  .quiz-block h2 { margin-bottom: 0.75rem; font-size: 1.2rem; }
+  .quiz-q {
+    background: var(--surface); border-radius: var(--radius);
+    padding: 1.25rem; margin-bottom: 0.75rem;
+    border: 1px solid #ffffff0a;
+  }
+  .quiz-q p { margin-bottom: 0.75rem; font-weight: 600; font-size: 0.9rem; }
+  .quiz-options { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .quiz-opt {
+    padding: 0.5rem 1rem; border: 1px solid #ffffff30; border-radius: 2rem;
+    background: transparent; color: var(--text); cursor: pointer;
+    font-size: 0.85rem; font-family: inherit;
+    transition: var(--transition);
+  }
+  .quiz-opt:hover { border-color: var(--purple); }
+  .quiz-opt.correct { background: var(--green); border-color: var(--green); color: #000; font-weight: 600; }
+  .quiz-opt.wrong { background: #e74c3c40; border-color: #e74c3c; }
+  .quiz-feedback { font-size: 0.85rem; margin-top: 0.5rem; min-height: 1.2rem; }
+
+  /* ========== DIAGRAM IMAGES ========== */
+  .diagram-wrap {
+    overflow-x: auto; background: #f8f9fa; border-radius: var(--radius);
+    padding: 0.75rem; text-align: center;
+  }
+  .diagram-wrap img {
+    width: 100%; min-width: 400px; display: block;
+    max-width: 100%; height: auto;
+  }
+  .diagram-caption {
+    font-size: 0.75rem; color: var(--text-dim); margin-top: 0.5rem;
+  }
+
+  /* ========== MARK COMPLETE BUTTON ========== */
+  .btn-done {
+    display: block; width: 100%; max-width: 300px; margin: 2rem auto;
+    padding: 0.8rem 1.5rem; border-radius: 2rem;
+    border: none; font-size: 1rem; font-weight: 700; cursor: pointer;
+    background: linear-gradient(135deg, var(--green), #22c55e);
+    color: #000; font-family: inherit;
+    transition: var(--transition);
+  }
+  .btn-done:hover { transform: scale(1.03); box-shadow: 0 4px 20px #4ade8040; }
+  .btn-done:active { transform: scale(0.98); }
+
+  /* ========== RESPONSIVE: TABLET ========== */
+  @media (min-width: 640px) {
+    body { max-width: 720px; margin: 0 auto; }
+    header h1 { font-size: 2.2rem; }
+    .tab-content { padding: 1.75rem 1.5rem; }
+    .card { padding: 1.5rem; }
+    .simple-table { font-size: 0.9rem; }
+    .simple-table th, .simple-table td { padding: 0.7rem 0.75rem; }
+  }
+
+  /* ========== RESPONSIVE: DESKTOP ========== */
+  @media (min-width: 1024px) {
+    body { max-width: 860px; }
+    header h1 { font-size: 2.6rem; }
+    .tab-content { padding: 2rem 1.5rem; }
+    .card { padding: 1.75rem; }
+    .tab-btn { padding: 0.6rem 1.3rem; font-size: 0.9rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ========== PROGRESS BAR ========== -->
+<div class="progress-wrap">
+  <div class="progress-label">
+    <span>Progress</span>
+    <span id="progressPct">0%</span>
+  </div>
+  <div class="progress-track">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+</div>
+
+<!-- ========== HEADER ========== -->
+<header>
+  <span class="brain-icon">🧠</span>
+  <h1>Neuroscience Explorer</h1>
+  <p class="subtitle">Your journey into the brain — one topic at a time</p>
+</header>
+
+<!-- ========== TABS ========== -->
+<nav class="tab-nav" id="tabNav">
+  <button class="tab-btn active" data-tab="topic1">1. What Is Neuroscience?</button>
+  <button class="tab-btn" data-tab="topic2">2. Neurons</button>
+</nav>
+
+<!-- ========== TOPIC 1 CONTENT ========== -->
+<section class="tab-content active" id="topic1">
+
+  <div class="card">
+    <h2>🧠 Welcome to Your Brain!</h2>
+    <p>Think of your brain as the <strong>most powerful computer in the universe</strong>. It weighs about 3 pounds — like a small bag of apples — and looks like a wrinkly walnut. It's sitting inside your skull right now, reading these words.</p>
+    <p><strong>Neuroscience</strong> is simply the study of that computer — how it works, what it's made of, and why it does what it does.</p>
+  </div>
+
+  <div class="fun-fact">
+    <strong>🤯 Fun Fact:</strong> Your brain has about <strong>86 billion neurons</strong>. That's more than 10× the number of people on planet Earth!
+  </div>
+
+  <div class="card">
+    <h2>📌 The Big Idea in One Sentence</h2>
+    <p>Neuroscience = trying to understand how a lump of jelly-like stuff inside your head creates everything you feel, think, remember, and do.</p>
+  </div>
+
+  <div class="card">
+    <h2>🎯 What Does Your Brain Actually <em>Do</em>?</h2>
+    <p>Your brain has <strong>5 main jobs</strong>. Here they are:</p>
+    <table class="simple-table">
+      <thead><tr><th>Job</th><th>Example</th></tr></thead>
+      <tbody>
+        <tr><td>👁️ Sense the world</td><td>Seeing these words, hearing music, feeling warmth</td></tr>
+        <tr><td>🏃 Move your body</td><td>Walking, typing, blinking, breathing</td></tr>
+        <tr><td>🤔 Think & decide</td><td>Solving a math problem, choosing what to eat</td></tr>
+        <tr><td>❤️ Feel emotions</td><td>Getting excited, feeling nervous, laughing</td></tr>
+        <tr><td>🫀 Keep you alive</td><td>Telling your heart to beat, making you breathe (without you even noticing!)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>🏙️ Analogy: Your Brain Is a City</h2>
+    <p>Imagine your brain is a giant city with:</p>
+    <table class="simple-table">
+      <tbody>
+        <tr><td>🏢 <strong>Buildings</strong></td><td>Brain cells called <strong>neurons</strong></td></tr>
+        <tr><td>🛣️ <strong>Roads</strong></td><td>Pathways that carry messages</td></tr>
+        <tr><td>⚡ <strong>Power lines</strong></td><td>Tiny electrical signals zipping around</td></tr>
+        <tr><td>🏘️ <strong>Neighborhoods</strong></td><td>Different brain regions doing different jobs</td></tr>
+        <tr><td>👥 <strong>86 billion citizens</strong></td><td>The number of neurons in one brain!</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- EXPANDABLE DEEP DIVES -->
+  <details class="expandable">
+    <summary>🔬 So… what does "neuroscience" literally mean? <span class="arrow">▼</span></summary>
+    <div class="inner">
+      <p><strong>Neuro</strong> = nerves / nervous system (from the Greek word "neuron")</p>
+      <p><strong>Science</strong> = the study of something using experiments and evidence</p>
+      <p>So neuroscience = the <strong>scientific study of the nervous system</strong> (brain, spinal cord, and nerves throughout your body).</p>
+    </div>
+  </details>
+
+  <details class="expandable">
+    <summary>🤷 Why should I care about neuroscience? <span class="arrow">▼</span></summary>
+    <div class="inner">
+      <ul style="padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.5rem;">
+        <li><strong>It explains YOU</strong> — why you dream, why you forget things, why some things feel good and others don't.</li>
+        <li><strong>It's the final frontier</strong> — we know more about outer space than we do about our own brains!</li>
+        <li><strong>It's useful</strong> — understanding your brain helps you study better, sleep better, and feel better.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="expandable">
+    <summary>🗺️ What parts of the nervous system are we talking about? <span class="arrow">▼</span></summary>
+    <div class="inner">
+      <p>The nervous system has two main parts:</p>
+      <p>🧠 <strong>Central Nervous System (CNS)</strong> = Brain + Spinal Cord. This is the "boss" — it makes decisions.</p>
+      <p>🦾 <strong>Peripheral Nervous System (PNS)</strong> = All the nerves that branch out to your body. These are the "messengers" carrying information back and forth.</p>
+    </div>
+  </details>
+
+  <!-- QUIZ -->
+  <div class="quiz-block">
+    <h2>🧪 Quick Quiz — Test Yourself!</h2>
+
+    <div class="quiz-q" id="q1">
+      <p>Q1: What is neuroscience?</p>
+      <div class="quiz-options">
+        <button class="quiz-opt" data-correct="false">The study of outer space</button>
+        <button class="quiz-opt" data-correct="true">The scientific study of the brain and nervous system</button>
+        <button class="quiz-opt" data-correct="false">The study of muscles</button>
+      </div>
+      <div class="quiz-feedback"></div>
+    </div>
+
+    <div class="quiz-q" id="q2">
+      <p>Q2: About how many neurons are in your brain?</p>
+      <div class="quiz-options">
+        <button class="quiz-opt" data-correct="false">1 million</button>
+        <button class="quiz-opt" data-correct="false">1 billion</button>
+        <button class="quiz-opt" data-correct="true">86 billion</button>
+      </div>
+      <div class="quiz-feedback"></div>
+    </div>
+
+    <div class="quiz-q" id="q3">
+      <p>Q3: Which of these is NOT a job of the brain?</p>
+      <div class="quiz-options">
+        <button class="quiz-opt" data-correct="false">Feeling emotions</button>
+        <button class="quiz-opt" data-correct="false">Controlling heartbeat</button>
+        <button class="quiz-opt" data-correct="true">Pumping blood</button>
+      </div>
+      <div class="quiz-feedback"></div>
+    </div>
+  </div>
+
+  <button class="btn-done" onclick="markComplete('topic1')">✅ I'm Done — Mark Complete</button>
+
+</section>
+
+<!-- ========== TOPIC 2 PLACEHOLDER ========== -->
+<section class="tab-content" id="topic2">
+
+  <div class="card">
+    <h2>🔬 What Is a Neuron?</h2>
+    <p>A <strong>neuron</strong> is a special type of cell — the main building block of your brain. Your body has skin cells, muscle cells, and blood cells… and your brain has neurons!</p>
+    <p>Each neuron is a tiny <strong>messenger</strong>. Its whole job is to <strong>receive information, process it, and send it forward</strong>. With 86 billion of them working together, they create everything you think, feel, and do.</p>
+  </div>
+
+  <!-- NEURON DIAGRAM -->
+  <div class="card" style="padding: 1rem;">
+    <h2>📐 Neuron Anatomy — See It to Believe It</h2>
+    <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.75rem;">Signals travel from <strong>left to right</strong>: Dendrites → Cell Body → Axon → Terminals → next neuron</p>
+    <div class="diagram-wrap">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Complete_neuron_cell_diagram_en.svg" alt="Labeled neuron diagram showing dendrites, cell body, axon, myelin sheath, and axon terminals" loading="lazy">
+    </div>
+    <p class="diagram-caption">A complete labeled neuron with all its parts</p>
+  </div>
+
+  <div class="card">
+    <h2>🏗️ The 3 Main Parts of a Neuron</h2>
+    <table class="simple-table">
+      <thead><tr><th>Part</th><th>What It Does</th><th>Tree Analogy</th></tr></thead>
+      <tbody>
+        <tr><td>🌿 <strong>Dendrites</strong></td><td>Catch signals from other neurons</td><td>The <strong>branches</strong> — they reach out to grab sunlight (signals)</td></tr>
+        <tr><td>🟣 <strong>Cell Body (Soma)</strong></td><td>The "brain" of the neuron — decides what to do with the signal</td><td>The <strong>tree trunk</strong> — where all the important stuff lives</td></tr>
+        <tr><td>🔌 <strong>Axon</strong></td><td>Sends the signal forward — one long cable going to the next neuron</td><td>The <strong>deep root</strong> — one long stretch going down</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:0.85rem; color:var(--text-dim); margin-top:0.5rem;">Signal path: <strong>Dendrites → Cell Body → Axon → next neuron</strong></p>
+  </div>
+
+  <div class="fun-fact">
+    <strong>🤯 Fun Fact:</strong> If you lined up all the neurons in your brain end to end, they'd stretch over <strong>600 miles</strong> — that's longer than the entire country of France!
+  </div>
+
+  <div class="card">
+    <h2>⚡ How Do Neurons "Talk" to Each Other?</h2>
+    <p>Neurons use <strong>two different languages</strong>:</p>
+    <table class="simple-table">
+      <tbody>
+        <tr><td>⚡ <strong>Electricity</strong> (inside)</td><td>A tiny electric pulse — called an <em>action potential</em> — zips down the axon like a domino chain. Once it starts, it doesn't stop!</td></tr>
+        <tr><td>🧪 <strong>Chemicals</strong> (between)</td><td>At the end of the axon, the neuron releases chemical messengers called <strong>neurotransmitters</strong> that float across a tiny gap to the next neuron.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SYNAPSE CLOSE-UP DIAGRAM -->
+  <div class="card" style="padding:1rem;">
+    <h2>🔍 Zoom In: The Synapse</h2>
+    <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.75rem;">This gap is only <strong>20 nanometers</strong> wide — that's 1,000× thinner than a human hair!</p>
+    <div class="diagram-wrap">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/d/d7/SynapseSchematic_lines.svg" alt="Synapse diagram showing neurotransmitters crossing the synaptic cleft between two neurons" loading="lazy">
+    </div>
+    <p class="diagram-caption">How signals cross the synapse: neurotransmitters (yellow dots) released from one neuron bind to receptors on the next</p>
+  </div>
+
+  <div class="card">
+    <h2>📞 Analogy: The Telephone Game</h2>
+    <p>Imagine you're playing the telephone game with your friends:</p>
+    <table class="simple-table">
+      <tbody>
+        <tr><td>👂 You <strong>hear</strong> a whisper</td><td>Like <strong>dendrites</strong> catching a signal</td></tr>
+        <tr><td>🧠 Your <strong>brain</strong> decides what to say next</td><td>Like the <strong>cell body</strong> processing</td></tr>
+        <tr><td>🗣️ You <strong>whisper</strong> to the next person</td><td>Like the <strong>axon</strong> sending the signal</td></tr>
+        <tr><td>💨 The <strong>air gap</strong> between you</td><td>Like the <strong>synapse</strong></td></tr>
+        <tr><td>🔊 The <strong>sound waves</strong> crossing the gap</td><td>Like <strong>neurotransmitters</strong> carrying the message across</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- EXPANDABLE DEEP DIVES -->
+  <details class="expandable">
+    <summary>🛡️ What is myelin and why does it matter? <span class="arrow">▼</span></summary>
+    <div class="inner">
+      <p><strong>Myelin</strong> is a fatty coating that wraps around the axon — like the rubber insulation around an electric wire. It <strong>speeds up the signal</strong> dramatically!</p>
+      <p>Without myelin, signals crawl at about 2 mph. <strong>With</strong> myelin, they race at up to <strong>250 mph</strong> — that's faster than a Formula 1 car! 🏎️</p>
+      <p>Diseases like <strong>multiple sclerosis (MS)</strong> happen when myelin gets damaged, which is why people with MS may have trouble moving or feeling things.</p>
+    </div>
+  </details>
+
+  <details class="expandable">
+    <summary>🔢 Are there different types of neurons? <span class="arrow">▼</span></summary>
+    <div class="inner">
+      <p>Yes! The three main types are:</p>
+      <ul style="padding-left:1.25rem; display:flex; flex-direction:column; gap:0.5rem;">
+        <li>👁️ <strong>Sensory neurons</strong> — carry information FROM your senses TO your brain (e.g., "this ice is cold!")</li>
+        <li>🏃 <strong>Motor neurons</strong> — carry commands FROM your brain TO your muscles (e.g., "pull your hand away!")</li>
+        <li>🔗 <strong>Interneurons</strong> — connect other neurons together inside your brain (these are the most common type!)</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="expandable">
+    <summary>🧠 How many synapses can one neuron have? <span class="arrow">▼</span></summary>
+    <div class="inner">
+      <p>A single neuron can connect to up to <strong>10,000 other neurons</strong> through synapses! Multiply that by 86 billion neurons and you get a network so complex that we still haven't fully mapped it.</p>
+      <p>This giant web of connections is why your brain is more powerful than any computer ever built.</p>
+    </div>
+  </details>
+
+  <!-- QUIZ -->
+  <div class="quiz-block">
+    <h2>🧪 Quick Quiz — Test Yourself!</h2>
+
+    <div class="quiz-q" id="q4">
+      <p>Q1: What is a neuron?</p>
+      <div class="quiz-options">
+        <button class="quiz-opt" data-correct="false">A type of skin cell</button>
+        <button class="quiz-opt" data-correct="true">A brain cell that sends and receives messages</button>
+        <button class="quiz-opt" data-correct="false">A muscle cell</button>
+      </div>
+      <div class="quiz-feedback"></div>
+    </div>
+
+    <div class="quiz-q" id="q5">
+      <p>Q2: Which part of the neuron RECEIVES signals from other neurons?</p>
+      <div class="quiz-options">
+        <button class="quiz-opt" data-correct="false">Axon</button>
+        <button class="quiz-opt" data-correct="true">Dendrites</button>
+        <button class="quiz-opt" data-correct="false">Synapse</button>
+      </div>
+      <div class="quiz-feedback"></div>
+    </div>
+
+    <div class="quiz-q" id="q6">
+      <p>Q3: What are neurotransmitters?</p>
+      <div class="quiz-options">
+        <button class="quiz-opt" data-correct="false">Electric pulses inside the axon</button>
+        <button class="quiz-opt" data-correct="false">The outer shell of a neuron</button>
+        <button class="quiz-opt" data-correct="true">Chemical messengers that cross the synapse</button>
+      </div>
+      <div class="quiz-feedback"></div>
+    </div>
+
+    <div class="quiz-q" id="q7">
+      <p>Q4: What is the correct signal path through a neuron?</p>
+      <div class="quiz-options">
+        <button class="quiz-opt" data-correct="false">Axon → Dendrites → Cell Body</button>
+        <button class="quiz-opt" data-correct="false">Synapse → Axon → Dendrites</button>
+        <button class="quiz-opt" data-correct="true">Dendrites → Cell Body → Axon</button>
+      </div>
+      <div class="quiz-feedback"></div>
+    </div>
+  </div>
+
+  <button class="btn-done" onclick="markComplete('topic2')">✅ I'm Done — Mark Complete</button>
+
+</section>
+
+<script>
+  // ========== TAB SWITCHING ==========
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  const tabContents = document.querySelectorAll('.tab-content');
+
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tabId = btn.dataset.tab;
+      if (!tabId || btn.disabled) return;
+      tabBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      tabContents.forEach(c => c.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+    });
+  });
+
+  // ========== QUIZ LOGIC ==========
+  document.querySelectorAll('.quiz-q').forEach(q => {
+    q.querySelectorAll('.quiz-opt').forEach(opt => {
+      opt.addEventListener('click', () => {
+        // Disable all options in this question after answer
+        const siblings = q.querySelectorAll('.quiz-opt');
+        if (q.dataset.answered === 'true') return;
+        q.dataset.answered = 'true';
+
+        const isCorrect = opt.dataset.correct === 'true';
+        opt.classList.add(isCorrect ? 'correct' : 'wrong');
+
+        // Highlight the correct one
+        siblings.forEach(s => {
+          if (s.dataset.correct === 'true') s.classList.add('correct');
+          s.style.pointerEvents = 'none';
+        });
+
+        const fb = q.querySelector('.quiz-feedback');
+        fb.textContent = isCorrect ? '✅ Correct!' : '❌ Not quite — the green one is right!';
+        fb.style.color = isCorrect ? 'var(--green)' : '#e74c3c';
+      });
+    });
+  });
+
+  // ========== MARK COMPLETE ==========
+  function markComplete(topicId) {
+    localStorage.setItem('done_' + topicId, 'true');
+    updateProgress();
+    refreshTabStyles();
+  }
+
+  function updateProgress() {
+    const totalTopics = 2;
+    let done = 0;
+    if (localStorage.getItem('done_topic1')) done++;
+    if (localStorage.getItem('done_topic2')) done++;
+    const pct = totalTopics > 0 ? Math.round((done / totalTopics) * 100) : 0;
+    document.getElementById('progressPct').textContent = pct + '%';
+    document.getElementById('progressFill').style.width = pct + '%';
+  }
+
+  function refreshTabStyles() {
+    tabBtns.forEach(btn => {
+      const tabId = btn.dataset.tab;
+      if (localStorage.getItem('done_' + tabId)) {
+        btn.classList.add('completed');
+      }
+    });
+  }
+
+  // ========== LOAD SAVED STATE ==========
+  updateProgress();
+  refreshTabStyles();
+</script>
+
+</body>
+</html>
