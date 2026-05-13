@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Omkar's Learning Blog</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0d1a;
+    --surface: #161630;
+    --surface2: #1e1e3a;
+    --purple: #a855f7;
+    --blue: #60a5fa;
+    --pink: #e879a0;
+    --green: #4ade80;
+    --yellow: #facc15;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --radius: 14px;
+    --transition: 0.25s ease;
+  }
+
+  html { font-size: 16px; }
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* ========== HEADER ========== */
+  header {
+    text-align: center; padding: 3rem 1rem 2rem;
+  }
+  header h1 {
+    font-size: 2rem; font-weight: 800;
+    background: linear-gradient(135deg, var(--purple), var(--pink));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  header p {
+    color: var(--text-dim); font-size: 0.95rem; margin-top: 0.5rem;
+  }
+
+  /* ========== REPORT GRID ========== */
+  .report-grid {
+    display: grid; gap: 1rem; padding: 0 1rem 2rem;
+    grid-template-columns: 1fr;
+  }
+
+  .report-card {
+    background: var(--surface); border-radius: var(--radius);
+    padding: 1.5rem; border: 1px solid #ffffff0a;
+    transition: var(--transition);
+    text-decoration: none; color: inherit; display: block;
+  }
+  .report-card:hover {
+    border-color: var(--purple);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px #a855f720;
+  }
+  .report-card .icon { font-size: 2.5rem; margin-bottom: 0.5rem; display: block; }
+  .report-card h2 { font-size: 1.15rem; margin-bottom: 0.35rem; }
+  .report-card p { font-size: 0.85rem; color: var(--text-dim); }
+  .report-card .tag {
+    display: inline-block; margin-top: 0.75rem;
+    padding: 0.3rem 0.75rem; border-radius: 2rem;
+    font-size: 0.75rem; font-weight: 600;
+    background: var(--purple); color: #fff;
+  }
+
+  /* ========== EMPTY SLOT ========== */
+  .report-card.coming-soon {
+    opacity: 0.5; pointer-events: none;
+    border: 1px dashed #ffffff15;
+  }
+  .report-card.coming-soon .tag { background: transparent; border: 1px solid #ffffff20; color: var(--text-dim); }
+
+  /* ========== FOOTER ========== */
+  footer {
+    text-align: center; padding: 1.5rem 1rem;
+    color: var(--text-dim); font-size: 0.75rem;
+    border-top: 1px solid #ffffff08;
+  }
+
+  /* ========== RESPONSIVE ========== */
+  @media (min-width: 640px) {
+    body { max-width: 720px; margin: 0 auto; }
+    header h1 { font-size: 2.4rem; }
+    .report-grid { grid-template-columns: 1fr 1fr; padding: 0 1.5rem 2rem; }
+    .report-card { padding: 1.75rem; }
+  }
+  @media (min-width: 1024px) {
+    body { max-width: 900px; }
+    header h1 { font-size: 2.8rem; }
+    .report-grid { grid-template-columns: 1fr 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Omkar's Learning Blog</h1>
+  <p>Exploring science, one topic at a time — with interactive reports</p>
+</header>
+
+<main class="report-grid">
+
+  <a href="/neurosci" class="report-card">
+    <span class="icon">🧠</span>
+    <h2>Neuroscience Explorer</h2>
+    <p>How your brain works — neurons, signals, and the science of thinking</p>
+    <span class="tag">Active</span>
+  </a>
+
+  <div class="report-card coming-soon">
+    <span class="icon">🔭</span>
+    <h2>Coming Soon</h2>
+    <p>What will Omkar learn next?</p>
+    <span class="tag">Coming soon</span>
+  </div>
+
+</main>
+
+<footer>
+  Built by Omkar — learning in public, one topic at a time
+</footer>
+
+</body>
+</html>
